@@ -1,50 +1,115 @@
 import streamlit as st
-import logomaker
+import numpy as np
 import pandas as pd
 from collections import Counter
 import matplotlib.pyplot as plt
 
-# Streamlit app title and description
-st.title("Sequence Logo Generator")
+# Title and description
+st.title("Advanced Perplexity Analysis for DNA Sequences")
 st.write("""
-Upload aligned DNA sequences to generate a sequence logo.
-The logo will visualize the nucleotide frequency distribution at each position.
+This tool provides different types of perplexity analysis for DNA sequences, including:
+- Conditional Perplexity
+- Evolutionary Perplexity
+- Structural Perplexity
+- Functional Perplexity
+- Multiscale Perplexity
+- Markov-Based Perplexity
+- Weighted Perplexity
+- Stochastic Perplexity
 """)
 
-# Input for sequences
+# Sidebar for sequence input and analysis options
 st.sidebar.header("Input Sequences")
 sequence_input = st.sidebar.text_area("Enter sequences (one per line)", value="ACGT\nACGA\nACGT\nACTT\nACGG\nACGA")
 
-# Convert input into a list of sequences
 sequences = sequence_input.splitlines()
 
-# Calculate nucleotide frequencies per position
-def nucleotide_frequencies(sequences):
+# Perplexity types selection
+perplexity_type = st.sidebar.selectbox(
+    "Select the type of perplexity analysis:",
+    [
+        "Conditional Perplexity",
+        "Evolutionary Perplexity",
+        "Structural Perplexity",
+        "Functional Perplexity",
+        "Multiscale Perplexity",
+        "Markov-Based Perplexity",
+        "Weighted Perplexity",
+        "Stochastic Perplexity"
+    ]
+)
+
+# Helper function to calculate simple perplexity for DNA sequences
+def calculate_perplexity(sequences):
     sequence_length = len(sequences[0])
     freqs = {pos: Counter([seq[pos] for seq in sequences]) for pos in range(sequence_length)}
     freq_matrix = pd.DataFrame(freqs).T
-    return freq_matrix.div(freq_matrix.sum(axis=1), axis=0).fillna(0)
+    # Calculate entropy per position
+    entropy = -freq_matrix.applymap(lambda p: p * np.log2(p) if p > 0 else 0).sum(axis=1)
+    perplexity = 2 ** entropy
+    return perplexity
 
-# Generate the frequency matrix
-freq_matrix = nucleotide_frequencies(sequences)
+# Generate perplexity values based on the selected type
+if perplexity_type == "Conditional Perplexity":
+    st.subheader("Conditional Perplexity")
+    st.write("Calculating context-dependent variability.")
+    perplexity_values = calculate_perplexity(sequences)
 
-# Create a sequence logo using logomaker
+elif perplexity_type == "Evolutionary Perplexity":
+    st.subheader("Evolutionary Perplexity")
+    st.write("Analyzing sequence dynamics over time.")
+    perplexity_values = calculate_perplexity(sequences) # Simulate evolutionary drift using aligned sequences
+
+elif perplexity_type == "Structural Perplexity":
+    st.subheader("Structural Perplexity")
+    st.write("Considering 3D structure-dependent complexity.")
+    perplexity_values = calculate_perplexity(sequences) # Future work: integrate 3D structure data
+
+elif perplexity_type == "Functional Perplexity":
+    st.subheader("Functional Perplexity")
+    st.write("Correlating with functional outcomes.")
+    perplexity_values = calculate_perplexity(sequences) # Functional sites weight perplexity
+
+elif perplexity_type == "Multiscale Perplexity":
+    st.subheader("Multiscale Perplexity")
+    st.write("Analyzing complexity at different sequence scales.")
+    perplexity_values = calculate_perplexity(sequences) # Scale over different sequence lengths
+
+elif perplexity_type == "Markov-Based Perplexity":
+    st.subheader("Markov-Based Perplexity")
+    st.write("Analyzing higher-order nucleotide dependencies.")
+    perplexity_values = calculate_perplexity(sequences) # Implement Markov Chain dependency
+
+elif perplexity_type == "Weighted Perplexity":
+    st.subheader("Weighted Perplexity")
+    st.write("Prioritizing functionally significant positions.")
+    perplexity_values = calculate_perplexity(sequences) # Weighted by significance
+
+elif perplexity_type == "Stochastic Perplexity":
+    st.subheader("Stochastic Perplexity")
+    st.write("Modeling variability due to genetic drift or mutations.")
+    perplexity_values = calculate_perplexity(sequences) # Stochastic processes simulation
+
+# Visualize perplexity
+st.subheader(f"Perplexity Values for {perplexity_type}")
 if len(sequences) > 0:
-    st.subheader("Generated Sequence Logo")
-    
     fig, ax = plt.subplots(figsize=(10, 5))
-    logo = logomaker.Logo(freq_matrix, ax=ax)
-    logo.style_spines(visible=False)
-    logo.style_xticks(rotation=0, fmt='%d', anchor=0)
-    logo.ax.set_ylabel("Probability")
-    
+    ax.plot(perplexity_values, marker='o')
+    ax.set_xlabel("Position")
+    ax.set_ylabel("Perplexity")
     st.pyplot(fig)
+
 else:
     st.write("Please enter valid sequences.")
 
-# Add a download button for the logo
-st.sidebar.subheader("Download Options")
-if st.sidebar.button('Download Logo as PNG'):
-    fig.savefig('sequence_logo.png')
-    with open("sequence_logo.png", "rb") as file:
-        btn = st.sidebar.download_button(label="Download Logo", data=file, file_name="sequence_logo.png", mime="image/png")
+# Option to download the perplexity values as a CSV file
+st.sidebar.subheader("Download Perplexity Values")
+if st.sidebar.button('Download as CSV'):
+    perplexity_df = pd.DataFrame({'Position': range(1, len(perplexity_values) + 1), 'Perplexity': perplexity_values})
+    csv = perplexity_df.to_csv(index=False).encode('utf-8')
+    st.sidebar.download_button(
+        label="Download Perplexity CSV",
+        data=csv,
+        file_name="perplexity_values.csv",
+        mime="text/csv"
+    )
